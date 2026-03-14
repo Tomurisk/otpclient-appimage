@@ -3,19 +3,6 @@ set -euo pipefail
 alias wget='wget --https-only --secure-protocol=TLSv1_2'
 
 ###############################################
-# Install Ubuntu dependencies
-###############################################
-
-sudo apt update
-sudo apt install -y \
-  wget cmake \
-  libgtk-3-dev libsecret-1-dev \
-  libprotobuf-dev libprotobuf-c-dev \
-  libgcrypt20-dev libcotp-dev \
-  libjansson-dev \
-  libqrencode-dev libzbar-dev
-
-###############################################
 # Fetch appimagetool
 ###############################################
 
@@ -166,7 +153,8 @@ mkdir -p "$APPDIR/$LIBS"
 for lib in \
     "$LIBS/libzbar.so.0."* \
     "$LIBS/libcotp.so.3."* \
-    "$LIBS/libjpeg.so.8."*
+    "$LIBS/libjpeg.so.8."* \
+    "$LIBS/libjansson.so.4."*
 do
     for f in $lib; do
         if [ -f "$f" ]; then
