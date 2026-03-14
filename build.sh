@@ -121,10 +121,10 @@ index 9a67999..a1cc8ae 100644
      gtk_widget_show_all (ab_diag);
  }
 diff --git a/src/get-builder.c b/src/get-builder.c
-index b8f4595..02079ce 100644
+index b8f4595..3d5656a 100644
 --- a/src/get-builder.c
 +++ b/src/get-builder.c
-@@ -1,21 +1,17 @@
+@@ -1,21 +1,14 @@
  #include <gtk/gtk.h>
  #include "version.h"
 +#include "data-path.h"
@@ -141,10 +141,7 @@ index b8f4595..02079ce 100644
 -    prefix = "/app";
 -#endif
 -    gchar *path = g_strconcat (prefix, "/", partial_path, NULL);
-+    // Build: <prefix>/share/otpclient/<partial_path>
-+    gchar *path = get_data_file_path(
-+        g_build_filename("otpclient", partial_path, NULL)
-+    );
++    gchar *path = get_data_file_path(partial_path);
  
 -    GtkBuilder *builder = gtk_builder_new_from_file (path);
 -
@@ -155,7 +152,7 @@ index b8f4595..02079ce 100644
      return builder;
  }
 diff --git a/src/get-builder.h b/src/get-builder.h
-index b3c5525..8dc2f93 100644
+index b3c5525..82b84ad 100644
 --- a/src/get-builder.h
 +++ b/src/get-builder.h
 @@ -2,7 +2,7 @@
@@ -163,7 +160,7 @@ index b3c5525..8dc2f93 100644
  G_BEGIN_DECLS
  
 -#define UI_PARTIAL_PATH         "share/otpclient/otpclient.ui"
-+#define UI_PARTIAL_PATH "otpclient.ui"
++#define UI_PARTIAL_PATH "otpclient/otpclient.ui"
  
  GtkBuilder *get_builder_from_partial_path (const gchar *partial_path);
  
