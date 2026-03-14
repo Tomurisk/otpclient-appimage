@@ -1,6 +1,18 @@
 ![GitHub License](https://img.shields.io/github/license/Tomurisk/emote-appimage)
 # Tested distros
-WIP
+<img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Antu_distributor-logo-mageia.svg" width="20"> Mageia 9
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Fedora_icon_(2021).svg" width="20"> Fedora 43
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/7/70/Zorin_OS.svg" width="20"> Zorin OS 18 Core
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/f/ff/Solus.svg" width="20"> Solus 2025-11-29
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/3/3f/Linux_Mint_logo_without_wordmark.svg" width="20"> Linux Mint 22.3 Zena
+
+<img src="https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/svg/endeavouros-linux.svg" width="20"> EndeavourOS Ganymede Neo
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/d/d4/MX_Linux_logo.svg" width="20"> MX Linux 25.1
 
 # Credits
 ![GitHub License](https://img.shields.io/github/license/paolostivanin/OTPClient)
