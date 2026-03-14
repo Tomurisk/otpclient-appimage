@@ -1,5 +1,7 @@
 ![GitHub License](https://img.shields.io/github/license/Tomurisk/emote-appimage)
 # Tested distros
+Works on around glibc 2.36, older distros will fail
+
 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Antu_distributor-logo-mageia.svg" width="20"> Mageia 9
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Fedora_icon_(2021).svg" width="20"> Fedora 43

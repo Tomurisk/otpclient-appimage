@@ -154,7 +154,8 @@ for lib in \
     "$LIBS/libzbar.so.0."* \
     "$LIBS/libcotp.so.3."* \
     "$LIBS/libjpeg.so.8."* \
-    "$LIBS/libjansson.so.4."*
+    "$LIBS/libprotobuf-c.so.1."* \
+    "$LIBS/libqrencode.so.4."*
 do
     for f in $lib; do
         if [ -f "$f" ]; then
