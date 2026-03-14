@@ -265,6 +265,7 @@ done
 ###############################################
 # Registration script
 ###############################################
+
 cat > "$APPDIR/usr/bin/registration" << 'EOF'
 #!/bin/bash
 set -euo pipefail

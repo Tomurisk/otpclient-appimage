@@ -1,4 +1,12 @@
-![GitHub License](https://img.shields.io/github/license/Tomurisk/emote-appimage)
+![GitHub License](https://img.shields.io/github/license/Tomurisk/otpclient-appimage)
+> [!WARNING]  
+> OTPClient 3.2.0 (as bundled in this AppImage) is **NOT FORWARD COMPATIBLE** with most newer versions. That means you will have to manually write down the tokens from your newer-version database and recreate the tokens again in a new database created within this AppImage.
+
+# Application menu (un)registration
+Run the AppImage in command line with argument `--reg` or `-r` to create the desktop file and associated icon
+
+Run the AppImage in command line with argument `--unreg` or `-u` to remove them
+
 # Tested distros
 Works on around glibc 2.36, older distros will fail
 
