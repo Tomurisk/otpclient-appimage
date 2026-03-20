@@ -7,6 +7,9 @@ alias wget='wget --https-only --secure-protocol=TLSv1_2'
 ###############################################
 
 APPIMAGETOOL="$HOME/Programs/appimagetool-x86_64.AppImage"
+AIT_SHA256=$(wget -qO- https://api.github.com/repos/AppImage/appimagetool/releases/latest \
+  | jq -r '.assets[] | select(.name=="appimagetool-x86_64.AppImage") | .digest' \
+  | cut -d: -f2)
 
 mkdir -p "$HOME/Programs"
 
@@ -14,7 +17,14 @@ if [ ! -f "$APPIMAGETOOL" ]; then
     echo "Downloading appimagetool..."
     wget -O "$APPIMAGETOOL" \
       "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
-    chmod +x "$APPIMAGETOOL"
+
+    if echo "$AIT_SHA256  $APPIMAGETOOL" | sha256sum -c -; then
+        echo "appimagetool checksum OK"
+        chmod +x "$APPIMAGETOOL"
+    else
+        echo "ERROR: Checksum mismatch!"
+        exit 1
+    fi
 fi
 
 ###############################################
@@ -23,14 +33,23 @@ fi
 
 VERSION="3.2.0"
 APPDIR="$(pwd)/AppDir"
+
+TARBALL_MD5="01a1e1c9b3d95a996d6f732faf9e8b0a"
+
 rm -rf "$APPDIR" OTPClient-*
 mkdir -p "$APPDIR"
 
 wget -O "v${VERSION}.tar.gz" \
   "https://github.com/paolostivanin/OTPClient/archive/refs/tags/v${VERSION}.tar.gz"
 
-tar xf "v${VERSION}.tar.gz"
-cd "OTPClient-${VERSION}"
+if echo "$TARBALL_MD5  v${VERSION}.tar.gz" | md5sum -c -; then
+    echo "Checksum OK – extracting tarball"
+    tar xf "v${VERSION}.tar.gz"
+    cd "OTPClient-${VERSION}"
+else
+    echo "ERROR: Checksum mismatch!"
+    exit 1
+fi
 
 ###############################################
 # Apply dynamic-prefix patch inline

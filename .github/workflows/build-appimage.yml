@@ -52,7 +52,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install -y \
-            wget cmake \
+            wget cmake jq \
             libgtk-3-dev libsecret-1-dev \
             libprotobuf-dev libprotobuf-c-dev \
             libgcrypt20-dev libcotp-dev \
