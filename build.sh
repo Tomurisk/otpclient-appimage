@@ -3,20 +3,31 @@ set -euo pipefail
 alias wget='wget --https-only --secure-protocol=TLSv1_2'
 
 ###############################################
+# Config
+###############################################
+
+VERSION="3.2.0"
+APPDIR="$(pwd)/AppDir"
+AIT_DIR="/tmp/appimagetool"
+AIT_VER="1.9.1"
+
+TARBALL_MD5="01a1e1c9b3d95a996d6f732faf9e8b0a"
+AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+
+# Clear old resources
+rm -rf "$APPDIR" "$AIT_DIR" OTPClient-* "v${VERSION}.tar.gz"
+
+###############################################
 # Fetch appimagetool
 ###############################################
 
-APPIMAGETOOL="$HOME/Programs/appimagetool-x86_64.AppImage"
-AIT_SHA256=$(wget -qO- https://api.github.com/repos/AppImage/appimagetool/releases/latest \
-  | jq -r '.assets[] | select(.name=="appimagetool-x86_64.AppImage") | .digest' \
-  | cut -d: -f2)
-
-mkdir -p "$HOME/Programs"
+APPIMAGETOOL="$AIT_DIR/appimagetool-x86_64.AppImage"
+mkdir -p "$AIT_DIR"
 
 if [ ! -f "$APPIMAGETOOL" ]; then
     echo "Downloading appimagetool..."
     wget -O "$APPIMAGETOOL" \
-      "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+      "https://github.com/AppImage/appimagetool/releases/download/${AIT_VER}/appimagetool-x86_64.AppImage"
 
     if echo "$AIT_SHA256  $APPIMAGETOOL" | sha256sum -c -; then
         echo "appimagetool checksum OK"
@@ -31,12 +42,6 @@ fi
 # Prepare sources
 ###############################################
 
-VERSION="3.2.0"
-APPDIR="$(pwd)/AppDir"
-
-TARBALL_MD5="01a1e1c9b3d95a996d6f732faf9e8b0a"
-
-rm -rf "$APPDIR" OTPClient-*
 mkdir -p "$APPDIR"
 
 wget -O "v${VERSION}.tar.gz" \
@@ -369,7 +374,37 @@ chmod +x "$APPDIR/AppRun"
 ###############################################
 
 cd ..
-ARCH=x86_64 "$APPIMAGETOOL" --appimage-extract-and-run "$APPDIR"
+RUNTIME="runtime-x86_64"
+
+gpg --import <<'EOF'
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mDMEZjaeexYJKwYBBAHaRw8BAQdAhvHdHoBweX0uVRgfcnlzexrSg+TAbK2mU1TA
+gi0TMC20NEFwcEltYWdlIHR5cGUgMiBydW50aW1lIDx0eXBlMi1ydW50aW1lQGFw
+cGltYWdlLm9yZz6IlgQTFggAPgIbAwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgBYh
+BFcMd6zqQMDxt1iQLL+WzKVkkPaVBQJmN7FgBQkSzRXlAAoJEL+WzKVkkPaVCXsA
+/0JxQPlr2AlKalt9LAGCXU633gBoXh8/sQQngGGWjhT2APoCls0XWL2qhx1jAIdr
+AqDmOi3bdzBOpWBBIsOexhbdBrg4BGY2nnsSCisGAQQBl1UBBQEBB0CRVIEEu+Ft
+W68O33iZCVDMIYUWdD59iXfQ7rHf8HxAEgMBCAeIfgQYFggAJhYhBFcMd6zqQMDx
+t1iQLL+WzKVkkPaVBQJmNp57AhsMBQkDwmcAAAoJEL+WzKVkkPaVY7oA/icTs/E6
+47LTon7ua021HdjQlwkHZOpa/hqBWQEB3w6GAQCbaPRxKcNN9Yfwxc6cIvfUORKz
++4OQzyesHV5P4fYLDw==
+=r/5H
+-----END PGP PUBLIC KEY BLOCK-----
+EOF
+
+wget -O "$AIT_DIR/runtime-x86_64.sig" \
+  "https://github.com/AppImage/type2-runtime/releases/download/continuous/$RUNTIME.sig"
+wget -O "$AIT_DIR/runtime-x86_64" \
+  "https://github.com/AppImage/type2-runtime/releases/download/continuous/$RUNTIME"
+
+if gpg --verify "$AIT_DIR/$RUNTIME.sig" "$AIT_DIR/$RUNTIME" 2>/dev/null; then
+    echo "Runtime signature OK"
+    ARCH=x86_64 "$APPIMAGETOOL" --appimage-extract-and-run --no-appstream --runtime-file "$AIT_DIR/$RUNTIME" "$APPDIR"
+else
+    echo "ERROR: Signature verification failed!"
+    exit 1
+fi
 
 ###############################################
 # Cleanup
