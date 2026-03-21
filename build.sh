@@ -243,13 +243,13 @@ cd ..
 # Static assets
 ###############################################
 
-ICON="$APPDIR/usr/share/icons/hicolor/scalable/apps/com.github.paolostivanin.OTPClient"
+ICON="$APPDIR/usr/share/icons/hicolor/scalable/apps/com.github.paolostivanin.OTPClient.svg"
 DESKTOP_FILE="$APPDIR/usr/share/applications/com.github.paolostivanin.OTPClient.desktop"
 
 sed -i 's/Exec=.*/Exec=\/AppRun/' "$DESKTOP_FILE"
 cp "$DESKTOP_FILE" "$APPDIR"
 
-cp "$ICON"* "$APPDIR"
+cp "$ICON" "$APPDIR"
 
 rm -rf "$APPDIR/usr/share/metainfo"
 
