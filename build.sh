@@ -11,7 +11,7 @@ APPDIR="$(pwd)/AppDir"
 AIT_DIR="/tmp/appimagetool"
 AIT_VER="1.9.1"
 
-TARBALL_MD5="01a1e1c9b3d95a996d6f732faf9e8b0a"
+TARBALL_SHA256="8c3102d3c34ff8ab74e52eaa1be585eb432b62930d51672e5a5df4c95a2e62b2"
 AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
 
 # Clear old resources
@@ -47,7 +47,7 @@ mkdir -p "$APPDIR"
 wget -O "v${VERSION}.tar.gz" \
   "https://github.com/paolostivanin/OTPClient/archive/refs/tags/v${VERSION}.tar.gz"
 
-if echo "$TARBALL_MD5  v${VERSION}.tar.gz" | md5sum -c -; then
+if echo "$TARBALL_SHA256  v${VERSION}.tar.gz" | sha256sum -c -; then
     echo "Checksum OK – extracting tarball"
     tar xf "v${VERSION}.tar.gz"
     cd "OTPClient-${VERSION}"
