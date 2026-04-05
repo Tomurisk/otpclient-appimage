@@ -6,16 +6,27 @@ alias wget='wget --https-only --secure-protocol=TLSv1_2'
 # Config
 ###############################################
 
-VERSION="3.2.0"
-APPDIR="$(pwd)/AppDir"
-AIT_DIR="/tmp/appimagetool"
-AIT_VER="1.9.1"
+# Content blocks
+source content_blocks.sh
 
+# Versions
+VERSION="3.2.0"
+AIT_VER="1.9.1"
+LBENC_VER="1.0.15"
+LCOTP_VER="3.0.0"
+
+# Definitions
+AIT_DIR="/tmp/appimagetool"
+APPDIR="$(pwd)/AppDir"
+
+# Checksum
 TARBALL_SHA256="8c3102d3c34ff8ab74e52eaa1be585eb432b62930d51672e5a5df4c95a2e62b2"
 AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+LBENC_SHA256="1b797b1b403358949201049675f70a495dee8e338df52f7790c7ad6e6a0027fa"
+LCOTP_SHA256="ff0b9ce208c4c6542a0f1e739cf31978fbf28848c573837c671a6cb7b56b2c12"
 
 # Clear old resources
-rm -rf "$APPDIR" "$AIT_DIR" OTPClient-* "v${VERSION}.tar.gz"
+rm -rf "$APPDIR" "$AIT_DIR" OTPClient-* libbaseencode-* libcotp-*
 
 ###############################################
 # Fetch appimagetool
@@ -44,200 +55,82 @@ fi
 
 mkdir -p "$APPDIR"
 
-wget -O "v${VERSION}.tar.gz" \
+wget -O "OTPClient-${VERSION}.tar.gz" \
   "https://github.com/paolostivanin/OTPClient/archive/refs/tags/v${VERSION}.tar.gz"
+wget -O "libbaseencode-${LBENC_VER}.tar.gz" \
+  "https://github.com/paolostivanin/libbaseencode/archive/refs/tags/v${LBENC_VER}.tar.gz"
+wget -O "libcotp-${LCOTP_VER}.tar.gz" \
+  "https://github.com/paolostivanin/libcotp/archive/refs/tags/v${LCOTP_VER}.tar.gz"
 
-if echo "$TARBALL_SHA256  v${VERSION}.tar.gz" | sha256sum -c -; then
-    echo "Checksum OK – extracting tarball"
-    tar xf "v${VERSION}.tar.gz"
-    cd "OTPClient-${VERSION}"
-else
-    echo "ERROR: Checksum mismatch!"
-    exit 1
-fi
+check() {
+    local file=$1
+    local sum=$2
+
+    if echo "$sum  $file" | sha256sum -c -; then
+        echo "$file checksum OK — extracting"
+        tar xf "$file"
+    else
+        echo "ERROR: $file checksum mismatch!"
+        exit 1
+    fi
+}
+
+check "OTPClient-${VERSION}.tar.gz" "$TARBALL_SHA256"
+check "libbaseencode-${LBENC_VER}.tar.gz" "$LBENC_SHA256"
+check "libcotp-${LCOTP_VER}.tar.gz" "$LCOTP_SHA256"
+
+###############################################
+# Build libraries
+###############################################
+
+DIRS=("libbaseencode-${LBENC_VER}" "libcotp-${LCOTP_VER}")
+
+for i in "${!DIRS[@]}"; do
+    dir="${DIRS[$i]}"
+
+    echo "=== Building $dir ==="
+
+    pushd "$dir" >/dev/null
+
+    mkdir -p build
+    pushd build >/dev/null
+
+    cmake ..
+    make
+    make install
+    ldconfig
+
+    popd >/dev/null   # exit build/
+    popd >/dev/null   # exit $dir/
+
+    echo "=== Finished $dir ==="
+done
 
 ###############################################
 # Apply dynamic-prefix patch inline
 ###############################################
 
-cat > dynamic-prefix.patch << 'EOF'
-diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 06a7213..7f14ceb 100644
---- a/CMakeLists.txt
-+++ b/CMakeLists.txt
-@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.16)
- project(OTPClient VERSION "3.2.0" LANGUAGES "C")
- include(GNUInstallDirs)
- 
-+configure_file(
-+    ${CMAKE_CURRENT_SOURCE_DIR}/src/config.h.in
-+    ${CMAKE_CURRENT_BINARY_DIR}/config.h
-+)
-+
- configure_file("src/common/version.h.in" "version.h")
- 
- set (GETTEXT_PACKAGE ${CMAKE_PROJECT_NAME})
-@@ -132,7 +137,8 @@ set(GUI_SOURCE_FILES
-         src/about_diag_cb.c
-         src/show-qr-cb.c
-         src/setup-signals-shortcuts.c
--        src/change-pwd-cb.c src/dbinfo-cb.c)
-+        src/change-pwd-cb.c src/dbinfo-cb.c
-+        src/data-path.c)
- 
- set(CLI_HEADER_FILES
-         src/cli/help.h
-@@ -160,7 +166,8 @@ set(CLI_SOURCE_FILES
-         src/common/aegis.c
-         src/common/freeotp.c
-         src/secret-schema.c
--        src/google-migration.pb-c.c)
-+        src/google-migration.pb-c.c
-+        src/data-path.c)
- 
- if(BUILD_GUI AND BUILD_CLI)
-         list(APPEND CLI_SOURCE_FILES
-diff --git a/src/about_diag_cb.c b/src/about_diag_cb.c
-index 9a67999..a1cc8ae 100644
---- a/src/about_diag_cb.c
-+++ b/src/about_diag_cb.c
-@@ -2,6 +2,7 @@
- #include <glib/gi18n.h>
- #include "version.h"
- #include "data.h"
-+#include "data-path.h"
- 
- void
- about_diag_cb (GSimpleAction *simple    __attribute__((unused)),
-@@ -12,8 +13,11 @@ about_diag_cb (GSimpleAction *simple    __attribute__((unused)),
- 
-     const gchar *authors[] = {"Paolo Stivanin <info@paolostivanin.com>", NULL};
-     const gchar *artists[] = {"Tobias Bernard (bertob) <https://tobiasbernard.com>", NULL};
--    const gchar *partial_path = "share/icons/hicolor/scalable/apps/com.github.paolostivanin.OTPClient.svg";
--    gchar *icon_abs_path = g_strconcat (INSTALL_PREFIX, "/", partial_path, NULL);
-+
-+    // Use dynamic prefix logic for the icon
-+    gchar *icon_abs_path = get_data_file_path(
-+        "icons/hicolor/scalable/apps/com.github.paolostivanin.OTPClient.svg"
-+    );
- 
-     GtkWidget *ab_diag = gtk_about_dialog_new ();
-     gtk_window_set_transient_for (GTK_WINDOW(app_data->main_window), GTK_WINDOW(ab_diag));
-@@ -21,15 +25,18 @@ about_diag_cb (GSimpleAction *simple    __attribute__((unused)),
-     gtk_about_dialog_set_program_name (GTK_ABOUT_DIALOG(ab_diag), PROJECT_NAME);
-     gtk_about_dialog_set_version (GTK_ABOUT_DIALOG(ab_diag), PROJECT_VER);
-     gtk_about_dialog_set_copyright (GTK_ABOUT_DIALOG(ab_diag), "2017-2022");
--    gtk_about_dialog_set_comments (GTK_ABOUT_DIALOG(ab_diag), _("Highly secure and easy to use GTK+ software for two-factor authentication that supports both Time-based One-time Passwords (TOTP) and HMAC-Based One-Time Passwords (HOTP)."));
-+    gtk_about_dialog_set_comments (GTK_ABOUT_DIALOG(ab_diag),
-+        _("Highly secure and easy to use GTK+ software for two-factor authentication that supports both Time-based One-time Passwords (TOTP) and HMAC-Based One-Time Passwords (HOTP)."));
-     gtk_about_dialog_set_license_type (GTK_ABOUT_DIALOG(ab_diag), GTK_LICENSE_GPL_3_0);
-     gtk_about_dialog_set_website (GTK_ABOUT_DIALOG(ab_diag), "https://github.com/paolostivanin/OTPClient");
-     gtk_about_dialog_set_authors (GTK_ABOUT_DIALOG(ab_diag), authors);
-     gtk_about_dialog_set_artists (GTK_ABOUT_DIALOG(ab_diag), artists);
-+
-     GdkPixbuf *logo = gdk_pixbuf_new_from_file (icon_abs_path, NULL);
-     gtk_about_dialog_set_logo (GTK_ABOUT_DIALOG(ab_diag), logo);
-+
-     g_free (icon_abs_path);
--    g_signal_connect (ab_diag, "response", G_CALLBACK (gtk_widget_destroy), NULL);
- 
-+    g_signal_connect (ab_diag, "response", G_CALLBACK (gtk_widget_destroy), NULL);
-     gtk_widget_show_all (ab_diag);
- }
-diff --git a/src/get-builder.c b/src/get-builder.c
-index b8f4595..3d5656a 100644
---- a/src/get-builder.c
-+++ b/src/get-builder.c
-@@ -1,21 +1,14 @@
- #include <gtk/gtk.h>
- #include "version.h"
-+#include "data-path.h"
- 
- GtkBuilder *
--get_builder_from_partial_path (const gchar *partial_path)
-+get_builder_from_partial_path(const gchar *partial_path)
- {
--    const gchar *prefix;
--#ifndef USE_FLATPAK_APP_FOLDER
--    // cmake trims the last '/', so we have to manually add it later on
--    prefix = INSTALL_PREFIX;
--#else
--    prefix = "/app";
--#endif
--    gchar *path = g_strconcat (prefix, "/", partial_path, NULL);
-+    gchar *path = get_data_file_path(partial_path);
- 
--    GtkBuilder *builder = gtk_builder_new_from_file (path);
--
--    g_free (path);
-+    GtkBuilder *builder = gtk_builder_new_from_file(path);
-+    g_free(path);
- 
-     return builder;
- }
-diff --git a/src/get-builder.h b/src/get-builder.h
-index b3c5525..82b84ad 100644
---- a/src/get-builder.h
-+++ b/src/get-builder.h
-@@ -2,7 +2,7 @@
- 
- G_BEGIN_DECLS
- 
--#define UI_PARTIAL_PATH         "share/otpclient/otpclient.ui"
-+#define UI_PARTIAL_PATH "otpclient/otpclient.ui"
- 
- GtkBuilder *get_builder_from_partial_path (const gchar *partial_path);
- 
+pushd "OTPClient-${VERSION}" >/dev/null
 
-EOF
-
+dyn_pref
 patch -p1 < dynamic-prefix.patch
 
 ###############################################
 # Create src/config.h.in required by the patch
 ###############################################
 
-cat << 'EOF' > src/config.h.in
-#pragma once
-
-#define INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@"
-#define INSTALL_DATADIR "@CMAKE_INSTALL_FULL_DATADIR@"
-EOF
-
-cat << 'EOF' > src/data-path.c
-#include <glib.h>
-#include "config.h"
-
-gchar *get_data_file_path(const gchar *partial_path)
-{
-    const gchar *env_prefix = g_getenv("OTPCLIENT_PREFIX");
-
-#ifndef USE_FLATPAK_APP_FOLDER
-    const gchar *prefix = env_prefix ? env_prefix : INSTALL_PREFIX;
-#else
-    const gchar *prefix = "/app";
-#endif
-
-    return g_build_filename(prefix, "share", partial_path, NULL);
-}
-
-EOF
-
-cat << 'EOF' > src/data-path.h
-#pragma once
-#include <glib.h>
-
-gchar *get_data_file_path(const gchar *partial_path);
-
-EOF
+helper_func
 
 # Build with AppDir as install prefix
-mkdir -p build && cd build
+mkdir -p build
+pushd build >/dev/null
+
 cmake -DCMAKE_INSTALL_PREFIX="$APPDIR/usr" ..
 make -j$(nproc)
 make install
 
-cd ..
+popd >/dev/null  # exit build/
+popd >/dev/null  # exit OTPClient/
 
 ###############################################
 # Static assets
@@ -257,15 +150,15 @@ rm -rf "$APPDIR/usr/share/metainfo"
 # Bundle runtime libraries
 ###############################################
 
-LIBS="/usr/lib/x86_64-linux-gnu"
+LIBS="/usr/lib64"
 mkdir -p "$APPDIR/$LIBS"
 
 for lib in \
     "$LIBS/libzbar.so.0."* \
-    "$LIBS/libcotp.so.3."* \
-    "$LIBS/libjpeg.so.8."* \
+    "$LIBS/libjpeg.so.62."* \
     "$LIBS/libprotobuf-c.so.1."* \
-    "$LIBS/libqrencode.so.4."*
+    "$LIBS/libqrencode.so.4."* \
+    "$LIBS/libjansson.so.4."*
 do
     for f in $lib; do
         if [ -f "$f" ]; then
@@ -285,6 +178,15 @@ do
         fi
     done
 done
+
+LIBCOTP="/usr/local/lib64/libcotp.so.${LCOTP_VER}"
+cp "$LIBCOTP" "$APPDIR/$LIBS"
+base=$(basename "$LIBCOTP")
+soname=$(echo "$base" | sed -E 's/(\.so\.[0-9]+).*/\1/')
+
+if [ ! -e "$APPDIR/$LIBS/$soname" ]; then
+    ln -sf "$base" "$APPDIR/$LIBS/$soname"
+fi
 
 ###############################################
 # Registration script
@@ -362,7 +264,7 @@ case "${1:-}" in
     --unreg|-u) exec "$HERE/usr/bin/registration" --unregister "$HERE" ;;
 esac
 
-export LD_LIBRARY_PATH="$HERE/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH:-}"
+export LD_LIBRARY_PATH="$HERE/usr/lib64:${LD_LIBRARY_PATH:-}"
 export OTPCLIENT_PREFIX="$HERE/usr"
 exec "$HERE/usr/bin/otpclient" "$@"
 EOF
@@ -373,25 +275,9 @@ chmod +x "$APPDIR/AppRun"
 # Build AppImage
 ###############################################
 
-cd ..
 RUNTIME="runtime-x86_64"
 
-gpg --import <<'EOF'
------BEGIN PGP PUBLIC KEY BLOCK-----
-
-mDMEZjaeexYJKwYBBAHaRw8BAQdAhvHdHoBweX0uVRgfcnlzexrSg+TAbK2mU1TA
-gi0TMC20NEFwcEltYWdlIHR5cGUgMiBydW50aW1lIDx0eXBlMi1ydW50aW1lQGFw
-cGltYWdlLm9yZz6IlgQTFggAPgIbAwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgBYh
-BFcMd6zqQMDxt1iQLL+WzKVkkPaVBQJmN7FgBQkSzRXlAAoJEL+WzKVkkPaVCXsA
-/0JxQPlr2AlKalt9LAGCXU633gBoXh8/sQQngGGWjhT2APoCls0XWL2qhx1jAIdr
-AqDmOi3bdzBOpWBBIsOexhbdBrg4BGY2nnsSCisGAQQBl1UBBQEBB0CRVIEEu+Ft
-W68O33iZCVDMIYUWdD59iXfQ7rHf8HxAEgMBCAeIfgQYFggAJhYhBFcMd6zqQMDx
-t1iQLL+WzKVkkPaVBQJmNp57AhsMBQkDwmcAAAoJEL+WzKVkkPaVY7oA/icTs/E6
-47LTon7ua021HdjQlwkHZOpa/hqBWQEB3w6GAQCbaPRxKcNN9Yfwxc6cIvfUORKz
-+4OQzyesHV5P4fYLDw==
-=r/5H
------END PGP PUBLIC KEY BLOCK-----
-EOF
+appimage_key
 
 wget -O "$AIT_DIR/runtime-x86_64.sig" \
   "https://github.com/AppImage/type2-runtime/releases/download/continuous/$RUNTIME.sig"
@@ -411,6 +297,6 @@ fi
 ###############################################
 
 shopt -s extglob
-rm -rf "$APPDIR" OTPClient-!(*.AppImage) "v${VERSION}.tar.gz"
+rm -rf "$APPDIR" OTPClient-!(*.AppImage) libbaseencode-* libcotp-*
 
 echo "Done"

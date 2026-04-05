@@ -8,7 +8,12 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+
+    container:
+      image: oraclelinux:9
+      # Oracle Linux gives slightly smaller and newer binaries
+      # Otherwise Ellison can drown in boiling piss for all I care
 
     steps:
       - name: Delete old continuous release and tag
@@ -18,9 +23,11 @@ jobs:
         run: |
           API="https://api.github.com/repos/Tomurisk/otpclient-appimage"
 
+          # Query release by tag
           RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
             "$API/releases/tags/continuous" || true)
 
+          # Extract release ID safely
           RELEASE_ID=$(echo "$RESPONSE" | grep '"id":' | head -n1 | sed 's/[^0-9]*//g' || true)
 
           if [ -n "$RELEASE_ID" ]; then
@@ -33,6 +40,7 @@ jobs:
             echo "No existing release found."
           fi
 
+          # Query tag
           TAG_RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
             "$API/git/refs/tags/continuous" || true)
 
@@ -44,20 +52,21 @@ jobs:
           else
             echo "Tag 'continuous' does not exist."
           fi
-
       - name: Update system
         run: |
-          sudo apt-get update -y
+          dnf -y update
+          dnf install -y epel-release
+          dnf config-manager --set-enabled ol9_codeready_builder
 
       - name: Install dependencies
         run: |
-          sudo apt-get install -y \
-            wget cmake jq \
-            libgtk-3-dev libsecret-1-dev \
-            libprotobuf-dev libprotobuf-c-dev \
-            libgcrypt20-dev libcotp-dev \
-            libjansson-dev \
-            libqrencode-dev libzbar-dev
+          dnf install -y \
+            gcc-g++ wget cmake jq patch file \
+            gtk3-devel libsecret-devel \
+            protobuf-devel protobuf-c-devel \
+            libgcrypt-devel libuuid-devel \
+            jansson-devel \
+            qrencode-devel zbar-devel
 
       - uses: actions/checkout@main
 
