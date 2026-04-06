@@ -17,6 +17,7 @@ t1iQLL+WzKVkkPaVBQJmNp57AhsMBQkDwmcAAAoJEL+WzKVkkPaVY7oA/icTs/E6
 EOF
 }
 
+# GPL‑3.0 licensed code
 dyn_pref() {
 cat > dynamic-prefix.patch << 'EOF'
 diff --git a/CMakeLists.txt b/CMakeLists.txt
@@ -150,6 +151,7 @@ index b3c5525..82b84ad 100644
 EOF
 }
 
+# GPL‑3.0 licensed code
 helper_func() {
 cat << 'EOF' > src/config.h.in
 #pragma once
@@ -177,6 +179,7 @@ gchar *get_data_file_path(const gchar *partial_path)
 
 EOF
 
+# GPL‑3.0 licensed code
 cat << 'EOF' > src/data-path.h
 #pragma once
 #include <glib.h>

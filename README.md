@@ -8,13 +8,25 @@ Run the AppImage in command line with argument `--reg` or `-r` to create the des
 Run the AppImage in command line with argument `--unreg` or `-u` to remove them
 
 # Tested distros
-Works on around glibc 2.36, older distros will fail
+Works on glibc 2.34≥, older distros will fail
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Fedora_icon_(2021).svg" width="20"> Fedora 35
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Ubuntu-logo-no-wordmark-solid-o-2022.svg" width="20"> Ubuntu 22.04
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/1/13/AlmaLinux_Icon_Logo.svg" width="20"> AlmaLinux 9
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/6/66/Openlogo-debianV2.svg" width="20"> Debian 12
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c9/Antu_distributor-logo-mageia.svg" width="20"> Mageia 9
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Fedora_icon_(2021).svg" width="20"> Fedora 43
+<img src="https://upload.wikimedia.org/wikipedia/commons/1/13/AlmaLinux_Icon_Logo.svg" width="20"> AlmaLinux 10
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/d/d1/OpenSUSE_Button.svg" width="20"> openSUSE Leap 15.6
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/7/70/Zorin_OS.svg" width="20"> Zorin OS 18 Core
+
+<img src="https://upload.wikimedia.org/wikipedia/commons/4/41/Fedora_icon_(2021).svg" width="20"> Fedora 43
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/f/ff/Solus.svg" width="20"> Solus 2025-11-29
 

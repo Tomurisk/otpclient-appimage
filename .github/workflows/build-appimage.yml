@@ -16,6 +16,21 @@ jobs:
       # Otherwise Ellison can drown in boiling piss for all I care
 
     steps:
+      - name: Check workflow time
+        shell: bash
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+
+          # Define end-of-life date
+          EOL_DATE="2032-06-30"
+
+          if [[ "$TODAY" > "$EOL_DATE" ]]; then
+            echo "This container image is no longer supported after $EOL_DATE."
+            echo "Consider using a newer release."
+            exit 1
+          else
+            echo "Container image supported. Continuing workflow..."
+          fi
       - name: Delete old continuous release and tag
         shell: bash
         env:
