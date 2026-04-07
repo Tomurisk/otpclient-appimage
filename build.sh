@@ -96,7 +96,7 @@ for i in "${!DIRS[@]}"; do
     pushd build >/dev/null
 
     cmake ..
-    make
+    make -j$(nproc)
     make install
     ldconfig
 
