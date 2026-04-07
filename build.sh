@@ -147,11 +147,12 @@ cp "$ICON" "$APPDIR"
 rm -rf "$APPDIR/usr/share/metainfo"
 
 ###############################################
-# Bundle runtime libraries
+# Bundle runtime libraries and their licenses
 ###############################################
 
 LIBS="/usr/lib64"
-mkdir -p "$APPDIR/$LIBS"
+LICENSES="/usr/share/licenses"
+mkdir -p "$APPDIR/$LIBS" "$APPDIR/$LICENSES"
 
 for lib in \
     "$LIBS/libzbar.so.0."* \
@@ -187,6 +188,19 @@ soname=$(echo "$base" | sed -E 's/(\.so\.[0-9]+).*/\1/')
 if [ ! -e "$APPDIR/$LIBS/$soname" ]; then
     ln -sf "$base" "$APPDIR/$LIBS/$soname"
 fi
+
+# Licenses
+cp -r "$LICENSES/zbar-libs"     "$APPDIR/$LICENSES"
+cp -r "$LICENSES/libjpeg-turbo" "$APPDIR/$LICENSES"
+cp -r "$LICENSES/protobuf"      "$APPDIR/$LICENSES"
+cp -r "$LICENSES/qrencode-libs" "$APPDIR/$LICENSES"
+cp -r "$LICENSES/jansson"       "$APPDIR/$LICENSES"
+
+mkdir -p "$APPDIR/$LICENSES/libcotp"
+cp -r "libcotp-${LCOTP_VER}/LICENSE" "$APPDIR/$LICENSES/libcotp"
+
+mkdir -p "$APPDIR/$LICENSES/otpclient"
+cp -r "OTPClient-${VERSION}/LICENSE" "$APPDIR/$LICENSES/otpclient"
 
 ###############################################
 # Registration script

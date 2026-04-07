@@ -80,7 +80,7 @@ jobs:
             gtk3-devel libsecret-devel \
             protobuf-devel protobuf-c-devel \
             libgcrypt-devel libuuid-devel \
-            jansson-devel \
+            jansson-devel libjpeg-turbo \
             qrencode-devel zbar-devel
 
       - uses: actions/checkout@main
