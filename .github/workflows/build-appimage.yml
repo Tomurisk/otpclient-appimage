@@ -7,14 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  cleanup:
+    name: Check WF time, delete old continuous release and tag
     runs-on: ubuntu-latest
-
-    container:
-      image: oraclelinux:9
-      # Oracle Linux gives slightly smaller and newer binaries
-      # Otherwise Ellison can drown in boiling piss for all I care
-
     steps:
       - name: Check workflow time
         shell: bash
@@ -23,15 +18,15 @@ jobs:
 
           # Define end-of-life date
           EOL_DATE="2032-06-30"
-
+          
           if [[ "$TODAY" > "$EOL_DATE" ]]; then
             echo "This container image is no longer supported after $EOL_DATE."
-            echo "Consider using a newer release."
             exit 1
           else
             echo "Container image supported. Continuing workflow..."
           fi
-      - name: Delete old continuous release and tag
+
+      - name: DELETE request
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -67,6 +62,29 @@ jobs:
           else
             echo "Tag 'continuous' does not exist."
           fi
+
+  build-appimage:
+    name: Build AppImage (${{ matrix.arch }})
+    needs: cleanup
+    runs-on: ${{ matrix.runner }}
+
+    container:
+      image: oraclelinux:9
+      # Oracle Linux gives slightly smaller and newer binaries
+      # Otherwise Ellison can drown in boiling piss for all I care
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
+      - uses: actions/checkout@main
+
       - name: Update system
         run: |
           dnf -y update
@@ -83,15 +101,13 @@ jobs:
             jansson-devel libjpeg-turbo \
             qrencode-devel zbar-devel
 
-      - uses: actions/checkout@main
-
       - name: Make build script executable
         run: chmod +x build.sh
 
       - name: Build AppImage
         run: ./build.sh
 
-      - name: Upload to Continuous Release
+      - name: Upload AppImage
         uses: softprops/action-gh-release@master
         with:
           tag_name: continuous

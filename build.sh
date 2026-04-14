@@ -9,6 +9,9 @@ alias wget='wget --https-only --secure-protocol=TLSv1_2'
 # Content blocks
 source content_blocks.sh
 
+# Architecture
+: "${ARCH:=$(uname -m)}"
+
 # Versions
 VERSION="3.2.0"
 AIT_VER="1.9.1"
@@ -19,26 +22,37 @@ LCOTP_VER="3.0.0"
 AIT_DIR="/tmp/appimagetool"
 APPDIR="$(pwd)/AppDir"
 
-# Checksum
+# Hashes
 TARBALL_SHA256="8c3102d3c34ff8ab74e52eaa1be585eb432b62930d51672e5a5df4c95a2e62b2"
-AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
 LBENC_SHA256="1b797b1b403358949201049675f70a495dee8e338df52f7790c7ad6e6a0027fa"
 LCOTP_SHA256="ff0b9ce208c4c6542a0f1e739cf31978fbf28848c573837c671a6cb7b56b2c12"
+AMD64_AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+ARM64_AIT_SHA256="f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158"
+
+# Set the right arch variables
+if [[ "$ARCH" == "x86_64" ]]; then
+    AIT_SHA256="$AMD64_AIT_SHA256"
+elif [[ "$ARCH" == "aarch64" ]]; then
+    AIT_SHA256="$ARM64_AIT_SHA256"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
 
 # Clear old resources
 rm -rf "$APPDIR" "$AIT_DIR" OTPClient-* libbaseencode-* libcotp-*
 
 ###############################################
-# Fetch appimagetool
+# Fetch appimagetool dynamically
 ###############################################
 
-APPIMAGETOOL="$AIT_DIR/appimagetool-x86_64.AppImage"
+APPIMAGETOOL="$AIT_DIR/appimagetool.AppImage"
 mkdir -p "$AIT_DIR"
 
 if [ ! -f "$APPIMAGETOOL" ]; then
     echo "Downloading appimagetool..."
     wget -O "$APPIMAGETOOL" \
-      "https://github.com/AppImage/appimagetool/releases/download/${AIT_VER}/appimagetool-x86_64.AppImage"
+      "https://github.com/AppImage/appimagetool/releases/download/${AIT_VER}/appimagetool-${ARCH}.AppImage"
 
     if echo "$AIT_SHA256  $APPIMAGETOOL" | sha256sum -c -; then
         echo "appimagetool checksum OK"
@@ -289,7 +303,7 @@ chmod +x "$APPDIR/AppRun"
 # Build AppImage
 ###############################################
 
-RUNTIME="runtime-x86_64"
+RUNTIME="runtime-${ARCH}"
 
 appimage_key
 
@@ -300,7 +314,7 @@ wget -O "$AIT_DIR/$RUNTIME" \
 
 if gpg --verify "$AIT_DIR/$RUNTIME.sig" "$AIT_DIR/$RUNTIME" 2>/dev/null; then
     echo "Runtime signature OK"
-    ARCH=x86_64 "$APPIMAGETOOL" --appimage-extract-and-run --no-appstream --runtime-file "$AIT_DIR/$RUNTIME" "$APPDIR"
+    ARCH=${ARCH} "$APPIMAGETOOL" --appimage-extract-and-run --no-appstream --runtime-file "$AIT_DIR/$RUNTIME" "$APPDIR"
 else
     echo "ERROR: Signature verification failed!"
     exit 1
