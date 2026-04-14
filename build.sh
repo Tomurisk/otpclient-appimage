@@ -293,9 +293,9 @@ RUNTIME="runtime-x86_64"
 
 appimage_key
 
-wget -O "$AIT_DIR/runtime-x86_64.sig" \
+wget -O "$AIT_DIR/$RUNTIME.sig" \
   "https://github.com/AppImage/type2-runtime/releases/download/continuous/$RUNTIME.sig"
-wget -O "$AIT_DIR/runtime-x86_64" \
+wget -O "$AIT_DIR/$RUNTIME" \
   "https://github.com/AppImage/type2-runtime/releases/download/continuous/$RUNTIME"
 
 if gpg --verify "$AIT_DIR/$RUNTIME.sig" "$AIT_DIR/$RUNTIME" 2>/dev/null; then
