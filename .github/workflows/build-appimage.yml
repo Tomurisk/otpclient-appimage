@@ -5,6 +5,9 @@ permissions:
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - '20[0-9][0-9]-[0-1][0-9]-[0-3][0-9]'
 
 jobs:
   cleanup:
@@ -31,6 +34,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Only run cleanup when pushing to the continuous branch
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Not on continuous branch — skipping cleanup."
+            exit 0
+          fi
+
           API="https://api.github.com/repos/Tomurisk/otpclient-appimage"
 
           # Query release by tag
@@ -107,11 +116,11 @@ jobs:
       - name: Build AppImage
         run: ./build.sh
 
-      - name: Upload AppImage
+      - name: Upload the AppImages
         uses: softprops/action-gh-release@master
         with:
-          tag_name: continuous
-          name: Continuous Build
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || 'continuous' }}
+          name: ${{ github.ref_type == 'tag' && format('{0}', github.ref_name) || 'Continuous Build' }}
           files: "*.AppImage"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
