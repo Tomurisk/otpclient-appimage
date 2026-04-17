@@ -6,6 +6,13 @@ alias wget='wget --https-only --secure-protocol=TLSv1_2'
 # Config
 ###############################################
 
+# Detect Docker
+if [ -f /.dockerenv ] || grep -q docker /proc/1/cgroup; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
 # Content blocks
 source content_blocks.sh
 
@@ -111,8 +118,8 @@ for i in "${!DIRS[@]}"; do
 
     cmake ..
     make -j$(nproc)
-    make install
-    ldconfig
+    $SUDO make install
+    $SUDO ldconfig
 
     popd >/dev/null   # exit build/
     popd >/dev/null   # exit $dir/
@@ -141,7 +148,7 @@ pushd build >/dev/null
 
 cmake -DCMAKE_INSTALL_PREFIX="$APPDIR/usr" ..
 make -j$(nproc)
-make install
+$SUDO make install
 
 popd >/dev/null  # exit build/
 popd >/dev/null  # exit OTPClient/
@@ -149,6 +156,9 @@ popd >/dev/null  # exit OTPClient/
 ###############################################
 # Static assets
 ###############################################
+
+# Fix permissions
+$SUDO chown -R "$(id -un):$(id -un)" "$APPDIR"
 
 ICON="$APPDIR/usr/share/icons/hicolor/scalable/apps/com.github.paolostivanin.OTPClient.svg"
 DESKTOP_FILE="$APPDIR/usr/share/applications/com.github.paolostivanin.OTPClient.desktop"
